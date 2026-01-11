@@ -88,7 +88,7 @@ Since Campus Compass is built with vanilla web technologies, it requires no back
 
 This project focuses on the **Logic Algorithm** linking static timetables to dynamic availability statuses.
 * **Copyright:** © 2026 Campus Compass Team (VJEC).
-* **License:** MIT License.
+* **License:** 
 
 ---
 
