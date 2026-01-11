@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Campus Compass | VJEC Complete</title>
+    <title>Campus Compass | VJEC Live</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         /* --- 1. VARIABLES & THEME --- */
@@ -23,6 +23,8 @@
             --b-canteen: #fef2f2; --bo-canteen: #ef4444; --t-canteen: #7f1d1d;
         }
 
+        @keyframes blink { 50% { opacity: 0.4; } }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Inter', sans-serif; height: 100vh; display: flex; background: var(--bg); overflow: hidden; }
 
@@ -31,6 +33,7 @@
             width: 420px; background: var(--sidebar); border-right: 1px solid var(--border);
             display: flex; flex-direction: column; z-index: 20;
             box-shadow: 4px 0 20px rgba(0,0,0,0.03);
+            transition: transform 0.3s ease;
         }
 
         .header { padding: 25px; border-bottom: 1px solid var(--border); background: white; }
@@ -39,26 +42,45 @@
 
         .controls { padding: 20px; background: #f8fafc; border-bottom: 1px solid var(--border); }
         
-        /* Day Selector */
-        .control-label { font-size: 0.75rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase; margin-bottom: 10px; display: block; }
-        .day-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 25px; }
+        /* Top Row: Label + Live Button */
+        .controls-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        
+        .live-btn {
+            border: none; background: #e2e8f0; color: var(--text-gray);
+            padding: 5px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700;
+            cursor: pointer; display: flex; align-items: center; gap: 6px; transition: 0.2s;
+        }
+        .live-btn.active { background: #fee2e2; color: #ef4444; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.2); }
+        .live-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+        .live-btn.active .live-dot { animation: blink 1s infinite; }
+
+        .control-label { font-size: 0.75rem; font-weight: 700; color: var(--text-gray); text-transform: uppercase; }
+
+        /* Day Grid */
+        .day-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin-bottom: 20px; }
         .day-btn { 
             border: 1px solid var(--border); background: white; padding: 10px 0; 
             font-size: 0.85rem; font-weight: 600; cursor: pointer; border-radius: 8px; 
             color: var(--text-gray); transition: 0.2s; 
         }
         .day-btn:hover { background: #eff6ff; border-color: var(--primary); color: var(--primary); }
-        .day-btn.active { background: var(--primary); color: white; border-color: var(--primary); box-shadow: 0 4px 6px rgba(37,99,235,0.2); }
+        .day-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
 
         /* Time Slider */
         .time-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
         .time-val { color: var(--primary); font-weight: 800; font-size: 1.2rem; }
         input[type=range] { width: 100%; cursor: pointer; accent-color: var(--primary); height: 6px; }
 
-        /* Search */
-        .search-area { padding: 20px; border-bottom: 1px solid var(--border); }
+        /* Search & Filter Area */
+        .search-area { padding: 15px 20px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+        
+        .dept-filter {
+            width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px;
+            font-size: 0.85rem; color: var(--text-dark); background: white; outline: none; cursor: pointer;
+        }
+
         .search-box {
-            width: 100%; padding: 14px 16px; border: 2px solid var(--border); border-radius: 10px;
+            width: 100%; padding: 12px 16px; border: 2px solid var(--border); border-radius: 10px;
             font-size: 0.95rem; outline: none; transition: 0.2s; background: #f8fafc;
         }
         .search-box:focus { border-color: var(--primary); background: white; box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1); }
@@ -72,9 +94,7 @@
         .list-item:hover { border-color: var(--primary); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .f-info strong { display: block; font-size: 0.95rem; color: var(--text-dark); margin-bottom: 2px; }
         .f-info small { font-size: 0.8rem; color: var(--text-gray); }
-        .status-dot { 
-            width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 1px var(--border); 
-        }
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 1px var(--border); }
 
         /* --- 3. MAP AREA --- */
         main { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; background: #f1f5f9; }
@@ -83,6 +103,10 @@
             position: absolute; inset: 0; pointer-events: none;
             background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
             background-size: 30px 30px; opacity: 0.6;
+        }
+
+        .map-wrapper {
+            transform-origin: center; transition: transform 0.3s ease;
         }
 
         .map-container { position: relative; width: 850px; height: 650px; }
@@ -94,7 +118,6 @@
             transition: 0.4s cubic-bezier(0.25, 0.8, 0.25, 1); cursor: pointer;
             box-shadow: 0 10px 25px rgba(0,0,0,0.05); border-width: 2px; border-style: solid;
         }
-
         .block span { pointer-events: none; }
         .block .sub { font-size: 0.75rem; font-weight: 500; opacity: 0.8; margin-top: 4px; }
 
@@ -103,15 +126,9 @@
         .b-ec { background: var(--b-ec); border-color: var(--bo-ec); color: var(--t-ec); }
         .b-mech { background: var(--b-mech); border-color: var(--bo-mech); color: var(--t-mech); }
         .b-admin { background: var(--b-admin); border-color: var(--bo-admin); color: var(--t-admin); }
-        /* Square Canteen as requested */
         .b-canteen { background: var(--b-canteen); border-color: var(--bo-canteen); color: var(--t-canteen); border-radius: 8px; }
 
-        /* Active State */
-        .block.active {
-            transform: scale(1.05); z-index: 50;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
-            border-color: var(--primary);
-        }
+        .block.active { transform: scale(1.05); z-index: 50; box-shadow: 0 25px 50px rgba(0,0,0,0.15); border-color: var(--primary); }
         .block.dimmed { opacity: 0.3; filter: grayscale(1); transform: scale(0.98); }
 
         /* --- 4. POPUP --- */
@@ -122,6 +139,7 @@
             border-left: 6px solid var(--primary);
             opacity: 0; transform: translateY(30px); pointer-events: none;
             transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 100;
         }
         .popup.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
         
@@ -129,14 +147,22 @@
         .p-header h3 { font-size: 1.2rem; color: var(--text-dark); margin: 0 0 4px 0; }
         .p-header small { color: var(--text-gray); font-size: 0.9rem; }
         
-        .p-status { 
-            display: inline-block; padding: 6px 12px; border-radius: 6px; 
-            color: white; font-size: 0.8rem; font-weight: 700; margin-bottom: 15px; 
-        }
-        
+        .p-status { display: inline-block; padding: 6px 12px; border-radius: 6px; color: white; font-size: 0.8rem; font-weight: 700; margin-bottom: 15px; }
         .p-details { display: grid; grid-template-columns: auto 1fr; gap: 8px 12px; font-size: 0.9rem; }
         .p-label { color: var(--text-gray); font-weight: 500; }
         .p-value { color: var(--text-dark); font-weight: 600; }
+
+        /* --- 5. MOBILE RESPONSIVENESS --- */
+        @media (max-width: 900px) {
+            body { flex-direction: column; overflow-y: auto; height: auto; }
+            aside { width: 100%; height: auto; border-right: none; border-bottom: 1px solid var(--border); box-shadow: none; }
+            .faculty-list { max-height: 300px; }
+            
+            main { height: 500px; background: #f1f5f9; overflow: hidden; }
+            .map-wrapper { transform: scale(0.55); transform-origin: center top; margin-top: 40px; }
+            
+            .popup { bottom: 10px; right: 10px; left: 10px; width: auto; }
+        }
 
     </style>
 </head>
@@ -145,11 +171,17 @@
     <aside>
         <div class="header">
             <h1>Campus Compass 🧭</h1>
-            <p>VJEC Faculty Locator (All Staff)</p>
+            <p>VJEC Faculty Locator (Live Edition)</p>
         </div>
 
         <div class="controls">
-            <span class="control-label">Select Day</span>
+            <div class="controls-top">
+                <span class="control-label">Select Day</span>
+                <button class="live-btn" id="live-btn" onclick="toggleLive()">
+                    <div class="live-dot"></div> LIVE MODE
+                </button>
+            </div>
+            
             <div class="day-grid">
                 <button class="day-btn active" onclick="setDay('Mon')">Mon</button>
                 <button class="day-btn" onclick="setDay('Tue')">Tue</button>
@@ -167,7 +199,15 @@
         </div>
 
         <div class="search-area">
-            <input type="text" class="search-box" id="search" placeholder="Search Faculty (e.g. Navya, Rinil)...">
+            <select class="dept-filter" id="dept-filter" onchange="renderList()">
+                <option value="All">All Departments</option>
+                <option value="Computer Science">Computer Science</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Mechanical">Mechanical</option>
+                <option value="Applied Science">Applied Science</option>
+                <option value="Humanities">Humanities</option>
+            </select>
+            <input type="text" class="search-box" id="search" placeholder="Search Faculty Name...">
         </div>
 
         <div class="faculty-list" id="list">
@@ -176,29 +216,31 @@
 
     <main>
         <div class="grid-bg"></div>
-        <div class="map-container">
-            <div class="block b-cs" id="blk-cs" style="top: 50px; left: 50px; width: 300px; height: 260px;">
-                <span>CS Department</span>
-                <span class="sub">CSE-A, B, C, D, CC</span>
-            </div>
+        <div class="map-wrapper">
+            <div class="map-container">
+                <div class="block b-cs" id="blk-cs" style="top: 50px; left: 50px; width: 300px; height: 260px;">
+                    <span>CS Department</span>
+                    <span class="sub">CSE-A, B, C, D, CC</span>
+                </div>
 
-            <div class="block b-ec" id="blk-ec" style="top: 50px; right: 50px; width: 240px; height: 240px;">
-                <span>Electronics</span>
-                <span class="sub">ECE Dept</span>
-            </div>
+                <div class="block b-ec" id="blk-ec" style="top: 50px; right: 50px; width: 240px; height: 240px;">
+                    <span>Electronics</span>
+                    <span class="sub">ECE Dept</span>
+                </div>
 
-            <div class="block b-mech" id="blk-mech" style="top: 360px; left: 50px; width: 300px; height: 220px;">
-                <span>Mech Block</span>
-                <span class="sub">Mechanical Dept</span>
-            </div>
+                <div class="block b-mech" id="blk-mech" style="top: 360px; left: 50px; width: 300px; height: 220px;">
+                    <span>Mech Block</span>
+                    <span class="sub">Mechanical Dept</span>
+                </div>
 
-            <div class="block b-admin" id="blk-admin" style="top: 360px; right: 150px; width: 200px; height: 150px;">
-                <span>Admin Block</span>
-                <span class="sub">Office / Principal</span>
-            </div>
+                <div class="block b-admin" id="blk-admin" style="top: 360px; right: 150px; width: 200px; height: 150px;">
+                    <span>Admin Block</span>
+                    <span class="sub">Office / Principal</span>
+                </div>
 
-            <div class="block b-canteen" id="blk-canteen" style="top: 540px; right: 50px; width: 120px; height: 120px;">
-                <span>Canteen</span>
+                <div class="block b-canteen" id="blk-canteen" style="top: 540px; right: 50px; width: 120px; height: 120px;">
+                    <span>Canteen</span>
+                </div>
             </div>
         </div>
 
@@ -218,18 +260,14 @@
 
     <script>
         // --- 1. FULL FACULTY DATABASE ---
-        // Extracted from image citations
         const facultyDB = [
-            // CSE-A
             { id: "csa1", name: "Ms. Clara Joseph", dept: "Computer Science" },
             { id: "csa2", name: "Ms. Rajitha K V", dept: "Applied Science (Maths)" },
             { id: "csa3", name: "Pro. George K V", dept: "Applied Science (Maths)" },
             { id: "csa4", name: "Mr. Shijith Thomas", dept: "Applied Science" },
-            { id: "csa5", name: "Ms. Navya E K", dept: "Computer Science" }, // Corrected Name
+            { id: "csa5", name: "Ms. Navya E K", dept: "Computer Science" },
             { id: "csa6", name: "Ms. Aswathi T V", dept: "Computer Science (Lab)" },
             { id: "csa7", name: "Ms. Bindu Sebastian", dept: "Computer Science (Lab)" },
-
-            // CSE-B
             { id: "csb1", name: "Ms. Anju Sunny", dept: "Computer Science" },
             { id: "csb2", name: "Dr. Ann Treessa Benny", dept: "Computer Science" },
             { id: "csb3", name: "Ms. Sona P", dept: "Computer Science" },
@@ -240,8 +278,6 @@
             { id: "csb8", name: "Ms. Remya P V", dept: "Computer Science (Lab)" },
             { id: "csb9", name: "Mr. Justy K S", dept: "Computer Science (Lab)" },
             { id: "csb10", name: "Mr. Nidhin Joseph", dept: "Computer Science (Lab)" },
-
-            // CC
             { id: "cc1", name: "Ms. Mafnita K K", dept: "Computer Science" },
             { id: "cc2", name: "Mr. Dominic N Thomas", dept: "Applied Science (Maths)" },
             { id: "cc3", name: "Dr. Anu Joseph", dept: "Applied Science (Maths)" },
@@ -252,8 +288,6 @@
             { id: "cc8", name: "Mr. Sudheep M K", dept: "Computer Science (Lab)" },
             { id: "cc9", name: "Mr. Thomas M S", dept: "Computer Science (Lab)" },
             { id: "cc10", name: "Ms. Aswathi V", dept: "Computer Science (Lab)" },
-
-            // ECE
             { id: "ec1", name: "Ms. Ambika I V", dept: "Applied Science (Maths)" },
             { id: "ec2", name: "Ms. Dona Shaju", dept: "Electronics" },
             { id: "ec3", name: "Dr. Fr. Mani Melvattom", dept: "Humanities" },
@@ -265,8 +299,6 @@
             { id: "ec9", name: "Ms. Aiswarya M R", dept: "Electronics (Lab)" },
             { id: "ec10", name: "Mr. Albin Thomas", dept: "Electronics (Lab)" },
             { id: "ec11", name: "Ms. Karthika K", dept: "Electronics (Lab)" },
-
-            // CSE-C
             { id: "csc1", name: "Ms. Divya Thomas", dept: "Applied Science (Maths)" },
             { id: "csc2", name: "Ms. Athulya N", dept: "Computer Science" },
             { id: "csc3", name: "Dr. Jisha M", dept: "Applied Science (Chem)" },
@@ -274,8 +306,6 @@
             { id: "csc5", name: "Fr. Vipin Thomas", dept: "Humanities" },
             { id: "csc6", name: "Mr. Rinil K R", dept: "Computer Science (Lab)" },
             { id: "csc7", name: "Ms. Arya Thalakkat", dept: "Computer Science (Lab)" },
-
-            // CSD
             { id: "csd1", name: "Mr. Muhammed Shefeek", dept: "Computer Science" },
             { id: "csd2", name: "Mr. Vasudevan M", dept: "Humanities" },
             { id: "csd3", name: "Ms. Rosebell Jhon", dept: "Computer Science" },
@@ -283,8 +313,6 @@
             { id: "csd5", name: "Ms. Aiswarya Vijay", dept: "Applied Science (Maths)" },
             { id: "csd6", name: "Dr. Shalu George", dept: "Humanities" },
             { id: "csd7", name: "Ms. Athira C V", dept: "Computer Science (Lab)" },
-
-            // Mech
             { id: "me1", name: "Ms. Fathimath Rashihath", dept: "Electronics (Basic EE)" },
             { id: "me2", name: "Ms. Ryne P M", dept: "Mechanical" },
             { id: "me3", name: "Ms. Alphonsa George", dept: "Applied Science (Maths)" },
@@ -294,60 +322,40 @@
         ];
 
         // --- 2. SCHEDULE LOGIC ---
-        // Format: "DAY-PERIOD-ID"
-        // Periods: 1(9-10), 2(10-11), 3(11:10-12:10), 4(12:10-13:10), 5(14-15), 6(15:10-16:10), 7(16:10-17:10)
-        
         const schedule = {
-            // --- MONDAY ---
             "Mon-1-csa1": { sub: "Foundations of Comp", cls: "S2 CSE-A", loc: "CS Dept", blk: "blk-cs" },
             "Mon-2-csa2": { sub: "Discrete Maths", cls: "S2 CSE-A", loc: "CS Dept", blk: "blk-cs" },
             "Mon-3-csa3": { sub: "Maths for CS", cls: "S2 CSE-A", loc: "CS Dept", blk: "blk-cs" },
             "Mon-5-csa1": { sub: "Chemistry Lab", cls: "S2 CSE-A", loc: "CS Dept", blk: "blk-cs" },
-            
             "Mon-1-csb1": { sub: "Maths for CS", cls: "S2 CSE-B", loc: "CS Dept", blk: "blk-cs" },
             "Mon-3-csb8": { sub: "IT Workshop / Chem Lab", cls: "S2 CSE-B", loc: "CS Dept", blk: "blk-cs" },
             "Mon-3-csb9": { sub: "IT Workshop / Chem Lab", cls: "S2 CSE-B", loc: "CS Dept", blk: "blk-cs" },
-            
             "Mon-1-cc1": { sub: "Foundations of Comp", cls: "S2 CC", loc: "CS Dept", blk: "blk-cs" },
             "Mon-5-cc6": { sub: "IT Workshop", cls: "S2 CC", loc: "CS Dept", blk: "blk-cs" },
-            
             "Mon-1-ec1": { sub: "Maths for EE", cls: "S2 ECE", loc: "EC Dept", blk: "blk-ec" },
             "Mon-3-ec8": { sub: "IT Workshop / Phys Lab", cls: "S2 ECE", loc: "EC Dept", blk: "blk-ec" },
-
             "Mon-1-csb4": { sub: "Programming in C", cls: "S2 CSE-C", loc: "CS Dept", blk: "blk-cs" },
-            
             "Mon-1-csd1": { sub: "Foundations of Comp", cls: "S2 CSD", loc: "CS Dept", blk: "blk-cs" },
             "Mon-5-csd4": { sub: "C Practical", cls: "S2 CSD", loc: "CS Dept", blk: "blk-cs" },
-
             "Mon-1-csb7": { sub: "Chemistry", cls: "S2 Mech", loc: "Mech Block", blk: "blk-mech" }, 
             "Mon-2-me1": { sub: "Basic EE", cls: "S2 Mech", loc: "Mech Block", blk: "blk-mech" },
-
-            // --- TUESDAY ---
-            "Tue-1-csa5": { sub: "Programming in C", cls: "S2 CSE-A", loc: "CS Dept", blk: "blk-cs" }, // Navya E K
+            "Tue-1-csa5": { sub: "Programming in C", cls: "S2 CSE-A", loc: "CS Dept", blk: "blk-cs" },
             "Tue-1-csb4": { sub: "Foundations of Comp", cls: "S2 CSE-B", loc: "CS Dept", blk: "blk-cs" },
             "Tue-1-cc10": { sub: "C Practical", cls: "S2 CC", loc: "CS Dept", blk: "blk-cs" },
-            "Tue-5-csa6": { sub: "C Practical", cls: "S2 CSE-A", loc: "CS Dept", blk: "blk-cs" }, // Aswathi TV
-
-            // --- WEDNESDAY ---
+            "Tue-5-csa6": { sub: "C Practical", cls: "S2 CSE-A", loc: "CS Dept", blk: "blk-cs" },
             "Wed-1-csa1": { sub: "Foundations of Comp", cls: "S2 CSE-A", loc: "CS Dept", blk: "blk-cs" },
             "Wed-3-csd7": { sub: "IT Workshop / Phys Lab", cls: "S2 CSD", loc: "CS Dept", blk: "blk-cs" },
             "Wed-3-me6": { sub: "Material Science", cls: "S2 Mech", loc: "Mech Block", blk: "blk-mech" },
-
-            // --- THURSDAY ---
             "Thu-1-csa4": { sub: "Chemistry", cls: "S2 CSE-A", loc: "CS Dept", blk: "blk-cs" },
-            "Thu-1-csa5": { sub: "Programming in C", cls: "S2 CSE-A", loc: "CS Dept", blk: "blk-cs" }, // Navya E K
+            "Thu-1-csa5": { sub: "Programming in C", cls: "S2 CSE-A", loc: "CS Dept", blk: "blk-cs" },
             "Thu-1-ec4": { sub: "Programming in C", cls: "S2 ECE", loc: "EC Dept", blk: "blk-ec" },
             "Thu-3-ec8": { sub: "IT Workshop", cls: "S2 ECE", loc: "EC Dept", blk: "blk-ec" },
             "Thu-5-csc6": { sub: "IT Workshop", cls: "S2 CSE-C", loc: "CS Dept", blk: "blk-cs" },
-
-            // --- FRIDAY ---
             "Fri-1-csa1": { sub: "Foundations of Comp", cls: "S2 CSE-A", loc: "CS Dept", blk: "blk-cs" },
             "Fri-5-csa2": { sub: "Discrete Maths", cls: "S2 CSE-A", loc: "CS Dept", blk: "blk-cs" },
-            "Fri-7-csa5": { sub: "Programming in C", cls: "S2 CSE-A", loc: "CS Dept", blk: "blk-cs" }, // Navya E K
+            "Fri-7-csa5": { sub: "Programming in C", cls: "S2 CSE-A", loc: "CS Dept", blk: "blk-cs" },
             "Fri-5-cc6": { sub: "IT Workshop", cls: "S2 CC", loc: "CS Dept", blk: "blk-cs" },
             "Fri-1-csc6": { sub: "IT Workshop", cls: "S2 CSE-C", loc: "CS Dept", blk: "blk-cs" },
-
-            // --- SATURDAY ---
             "Sat-1-csa5": { sub: "Programming in C", cls: "S2 CSE-A", loc: "CS Dept", blk: "blk-cs" },
             "Sat-1-csb3": { sub: "Programming in C", cls: "S2 CSE-B", loc: "CS Dept", blk: "blk-cs" }
         };
@@ -355,6 +363,8 @@
         // State
         let currentDay = "Mon";
         let currentTime = 9.0;
+        let liveMode = false;
+        let liveInterval = null;
 
         // UI
         const ui = {
@@ -362,21 +372,68 @@
             disp: document.getElementById('time-disp'),
             list: document.getElementById('list'),
             search: document.getElementById('search'),
+            filter: document.getElementById('dept-filter'),
             popup: document.getElementById('popup'),
-            blocks: document.querySelectorAll('.block')
+            blocks: document.querySelectorAll('.block'),
+            liveBtn: document.getElementById('live-btn')
         };
 
         // Init
         function init() {
             renderList();
             ui.slider.addEventListener('input', (e) => {
+                // If sliding manually, turn off Live Mode
+                if(liveMode) toggleLive();
+                
                 currentTime = parseFloat(e.target.value);
-                updateTime();
+                updateTimeDisplay();
                 renderList();
                 ui.popup.classList.remove('visible');
                 resetMap();
             });
             ui.search.addEventListener('input', renderList);
+        }
+
+        // --- LIVE MODE ---
+        function toggleLive() {
+            liveMode = !liveMode;
+            ui.liveBtn.classList.toggle('active', liveMode);
+            
+            if (liveMode) {
+                syncTime();
+                liveInterval = setInterval(syncTime, 60000); // Update every min
+                ui.slider.disabled = true; // Lock slider
+            } else {
+                clearInterval(liveInterval);
+                ui.slider.disabled = false;
+            }
+        }
+
+        function syncTime() {
+            const now = new Date();
+            // Convert to float (9:30 = 9.5)
+            let val = now.getHours() + (now.getMinutes() / 60);
+            
+            // Constrain to working hours for demo (optional)
+            // if (val < 9) val = 9; if (val > 17) val = 17;
+            
+            currentTime = val;
+            ui.slider.value = val;
+            
+            // Set Day
+            const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+            const dayStr = days[now.getDay()];
+            if(dayStr !== 'Sun') setDay(dayStr);
+            
+            updateTimeDisplay();
+            renderList();
+            
+            // Auto refresh popup if open
+            const openName = document.getElementById('p-name').innerText;
+            if (openName !== "--") {
+                 const f = facultyDB.find(fac => fac.name === openName);
+                 if(f) highlight(f, getStatus(f.id));
+            }
         }
 
         function setDay(d) {
@@ -389,12 +446,14 @@
             resetMap();
         }
 
-        function updateTime() {
-            const h = Math.floor(currentTime);
-            const m = (currentTime % 1) === 0.5 ? "30" : "00";
+        function updateTimeDisplay() {
+            let h = Math.floor(currentTime);
+            let m = Math.floor((currentTime % 1) * 60);
             const s = h >= 12 ? "PM" : "AM";
             const dh = h > 12 ? h - 12 : h;
-            ui.disp.innerText = `${dh}:${m} ${s}`;
+            // Pad minutes
+            const mStr = m < 10 ? "0"+m : m;
+            ui.disp.innerText = `${dh}:${mStr} ${s}`;
         }
 
         function getPeriod(t) {
@@ -430,9 +489,14 @@
 
         function renderList() {
             const q = ui.search.value.toLowerCase();
+            const filter = ui.filter.value;
             ui.list.innerHTML = "";
             
-            facultyDB.filter(f => f.name.toLowerCase().includes(q)).forEach(f => {
+            facultyDB.filter(f => {
+                const matchesName = f.name.toLowerCase().includes(q);
+                const matchesDept = filter === "All" || f.dept.includes(filter);
+                return matchesName && matchesDept;
+            }).forEach(f => {
                 const s = getStatus(f.id);
                 const div = document.createElement('div');
                 div.className = "list-item";
