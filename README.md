@@ -11,8 +11,6 @@ Features:
 
 Interactive 3D Map: A CSS-based isometric map of VJEC (Main Block, CS, Mech, etc.).
 
-2D/3D Toggle: Switch between a detailed architectural view and a flat schematic view.
-
 Privacy Focused: Calculates location based on schedule logic, not physical sensors.
 
 Instant Search: Locate any faculty member by name or department instantly.
