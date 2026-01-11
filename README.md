@@ -9,7 +9,7 @@ Solution: Campus Compass is a web-based dashboard that predicts faculty location
 
 Features:
 
-Interactive 3D Map: A CSS-based isometric map of VJEC (Main Block, CS, Mech, etc.).
+Interactive Map: A CSS-based isometric map of VJEC (Main Block, CS, Mech, etc.).
 
 Privacy Focused: Calculates location based on schedule logic, not physical sensors.
 
