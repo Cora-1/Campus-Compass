@@ -2,7 +2,7 @@
 
 **Campus Compass** is a real-time, logic-based navigation system designed to solve the problem of locating faculty on large university campuses. Unlike expensive GPS hardware, this system uses a "Predictive Logic Algorithm" that cross-references **Static Academic Timetables** with **Real-Time Teacher Statuses** (Substitutions, Meetings, Cabin Availability) to pinpoint faculty locations on an interactive digital map.
 
-🔗 **Live Demo:** [https://campuscompass-899ca.web.app/login.html](https://campuscompass-899ca.web.app/)
+🔗 **Live Demo:** [https://campuscompass-899ca.web.app](https://campuscompass-899ca.web.app/login.html)
 
 ---
 
