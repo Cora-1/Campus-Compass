@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Compass | Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #2563eb; --primary-hover: #1d4ed8; --bg-grad: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); --text-main: #1e293b; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg-grad); height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; }
+        
+        .login-card { 
+            background: white; width: 100%; max-width: 420px; padding: 40px; 
+            border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.08); 
+            text-align: center; position: relative; overflow: hidden;
+        }
+
+        /* Top Decoration */
+        .login-card::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 6px;
+            background: var(--primary);
+        }
+
+        h1 { font-size: 1.8rem; color: var(--text-main); margin-bottom: 10px; letter-spacing: -0.5px; }
+        p.subtitle { color: #64748b; font-size: 0.9rem; margin-top: 0; margin-bottom: 30px; }
+
+        /* Tabs */
+        .tabs { display: flex; background: #f1f5f9; padding: 4px; border-radius: 12px; margin-bottom: 30px; }
+        .tab { 
+            flex: 1; padding: 12px; font-weight: 600; font-size: 0.9rem; color: #64748b; 
+            cursor: pointer; border-radius: 8px; transition: 0.2s; text-align: center;
+        }
+        .tab.active { background: white; color: var(--primary); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+        /* Inputs */
+        input { 
+            width: 100%; padding: 14px; margin-bottom: 15px; border: 2px solid #e2e8f0; 
+            border-radius: 12px; font-size: 1rem; outline: none; transition: 0.2s; box-sizing: border-box; color: #334155;
+        }
+        input:focus { border-color: var(--primary); background: #f8fafc; }
+
+        /* Button */
+        button { 
+            width: 100%; padding: 16px; background: var(--primary); color: white; 
+            border: none; border-radius: 12px; font-size: 1rem; font-weight: 700; 
+            cursor: pointer; transition: 0.2s; margin-top: 10px; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+        button:hover { background: var(--primary-hover); transform: translateY(-1px); }
+
+        /* Map Link */
+        .map-link { 
+            display: inline-block; margin-bottom: 25px; color: #64748b; 
+            text-decoration: none; font-weight: 600; font-size: 0.85rem; 
+            background: #f8fafc; padding: 8px 16px; border-radius: 20px; transition: 0.2s;
+        }
+        .map-link:hover { background: #e2e8f0; color: var(--text-main); }
+
+        .error { color: #ef4444; font-size: 0.9rem; margin-top: 15px; display: none; background: #fef2f2; padding: 10px; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <a href="/" class="map-link">← Continue as Guest (View Map)</a>
+        
+        <h1>Welcome Back</h1>
+        <p class="subtitle">Log in to manage campus schedules</p>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('admin')" id="tab-admin">Admin</div>
+            <div class="tab" onclick="switchTab('faculty')" id="tab-faculty">Faculty</div>
+        </div>
+
+        <div id="form-admin">
+            <input type="email" id="a-email" placeholder="Admin Email">
+            <input type="password" id="a-pass" placeholder="Password">
+            <button onclick="adminLogin()">Access Dashboard</button>
+        </div>
+
+        <div id="form-faculty" style="display:none">
+            <input type="text" id="f-reg" placeholder="Faculty ID (e.g. T-101)">
+            <input type="password" id="f-pass" placeholder="Password">
+            <button onclick="facultyLogin()">Login to Portal</button>
+        </div>
+
+        <p class="error" id="error-msg"></p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+        import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyCJOcm-V3Gt4yL6adrh0EhWSzR1Z-jKh2M", authDomain: "campuscompass-899ca.firebaseapp.com", projectId: "campuscompass-899ca", storageBucket: "campuscompass-899ca.firebasestorage.app", messagingSenderId: "1054182451273", appId: "1:1054182451273:web:3ec53886693197c441b798", measurementId: "G-3SFMCJQZSW" };
+        const app = initializeApp(firebaseConfig); const auth = getAuth(app); const db = getFirestore(app);
+
+        window.switchTab = (type) => {
+            document.getElementById('error-msg').style.display = 'none';
+            if(type === 'admin'){
+                document.getElementById('form-admin').style.display='block'; document.getElementById('form-faculty').style.display='none';
+                document.getElementById('tab-admin').classList.add('active'); document.getElementById('tab-faculty').classList.remove('active');
+            } else {
+                document.getElementById('form-admin').style.display='none'; document.getElementById('form-faculty').style.display='block';
+                document.getElementById('tab-admin').classList.remove('active'); document.getElementById('tab-faculty').classList.add('active');
+            }
+        };
+
+        window.adminLogin = () => {
+            const e = document.getElementById('a-email').value, p = document.getElementById('a-pass').value;
+            signInWithEmailAndPassword(auth, e, p).then(() => window.location.href="admin.html").catch(() => showError("Invalid Admin Credentials"));
+        };
+
+        window.facultyLogin = async () => {
+            const r = document.getElementById('f-reg').value, p = document.getElementById('f-pass').value;
+            if(!r || !p) return showError("Please enter all fields");
+            const q = query(collection(db, "faculty"), where("regId", "==", r));
+            const s = await getDocs(q);
+            if(s.empty) return showError("ID not found");
+            let found = false;
+            s.forEach(doc => { const d = doc.data(); if(d.password === p) { found=true; sessionStorage.setItem("teacherId", doc.id); sessionStorage.setItem("teacherName", d.name); window.location.href="teacher.html"; }});
+            if(!found) showError("Incorrect Password");
+        };
+
+        function showError(m) { const e=document.getElementById('error-msg'); e.innerText=m; e.style.display='block'; }
+    </script>
+</body>
+</html>

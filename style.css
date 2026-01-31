@@ -1,0 +1,107 @@
+/* --- 3D ISOMETRIC MAP ENGINE (FIXED) --- */
+.map-viewport {
+    flex: 1; background: #eef2f6; position: relative; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+}
+
+.iso-container {
+    /* This sets the Isometric Angle */
+    transform: rotateX(60deg) rotateZ(-45deg);
+    transform-style: preserve-3d;
+    width: 600px; height: 600px;
+    position: relative;
+    top: -50px; /* Adjusts map position on screen */
+}
+
+.ground {
+    position: absolute; width: 800px; height: 800px; 
+    background: #f8fafc;
+    border-radius: 10px; 
+    box-shadow: 0 0 50px rgba(0,0,0,0.05);
+    transform: translateZ(-1px); /* Puts ground below buildings */
+    left: -100px; top: -100px;
+}
+
+/* Optional: Adds a grid pattern to the ground for a "Tech" look */
+.grid-lines {
+    width: 100%; height: 100%;
+    background-image: linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.5;
+}
+
+/* --- BUILDING BASE --- */
+.building {
+    position: absolute; 
+    transform-style: preserve-3d; 
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+/* Hover Effect: Lifts the whole building up */
+.building:hover { transform: translateZ(10px); }
+.building.active { transform: translateZ(20px); }
+
+/* --- THE CUBE (The 3D Shape) --- */
+.cube {
+    width: 100%; height: 100%;
+    position: relative; transform-style: preserve-3d;
+}
+
+.face { position: absolute; }
+
+/* 1. The Roof (Top) */
+.face.top {
+    width: 100%; height: 100%;
+    background: #e2e8f0; /* Light Gray Roof */
+    transform: translateZ(60px); /* Lifts roof up by 60px */
+    border: 2px solid white;
+    display: flex; align-items: center; justify-content: center;
+    color: #475569; font-weight: 800; font-size: 10px; text-align: center;
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.05);
+    transition: background 0.3s;
+}
+
+/* 2. The Left Wall (Side) */
+.face.left {
+    width: 100%; height: 60px; /* Height matches the translateZ of roof */
+    background: #94a3b8; /* Darker Gray */
+    transform-origin: bottom;
+    transform: rotateX(90deg) translateZ(-60px); 
+    bottom: 0;
+}
+
+/* 3. The Right Wall (Front/Side) */
+.face.right {
+    width: 60px; /* Height matches the translateZ */
+    height: 100%;
+    background: #cbd5e1; /* Medium Gray */
+    transform-origin: right;
+    transform: rotateY(90deg) translateX(60px);
+    right: 0;
+}
+
+/* --- ACTIVE STATE COLORS (When searched) --- */
+.building.active .face.top { background: var(--primary); color: white; border-color: var(--primary); }
+.building.active .face.left { background: #1d4ed8; } /* Darker Blue */
+.building.active .face.right { background: #3b82f6; } /* Blue */
+
+/* --- BUILDING POSITIONS & SIZES --- */
+
+/* Main Block */
+.b-main { top: 100px; left: 100px; width: 140px; height: 120px; }
+
+/* CS Dept - Make it taller */
+.b-cs { top: 80px; left: 300px; width: 100px; height: 140px; }
+.b-cs .face.top { transform: translateZ(90px); } /* Higher Roof */
+.b-cs .face.left { height: 90px; transform: rotateX(90deg) translateZ(-90px); }
+.b-cs .face.right { width: 90px; transform: rotateY(90deg) translateX(90px); }
+
+/* Mech Block */
+.b-mech { top: 280px; left: 80px; width: 140px; height: 100px; }
+
+/* Electronics */
+.b-ec { top: 280px; left: 280px; width: 100px; height: 100px; }
+
+/* Canteen */
+.b-canteen { top: 450px; left: 450px; width: 80px; height: 80px; }

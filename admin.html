@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Compass | Admin Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; padding: 20px; max-width: 1000px; margin: 0 auto; color: #1e293b; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .btn { border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
+        .btn-logout { background: #fee2e2; color: #ef4444; }
+        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; }
+        h3 { margin-top: 0; border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; }
+        label { font-size: 0.75rem; font-weight: 700; color: #64748b; margin-bottom: 5px; display: block; text-transform: uppercase; }
+        input, select { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #cbd5e1; border-radius: 6px; }
+        .btn-primary { width: 100%; background: #2563eb; color: white; padding: 12px; border-radius: 6px; font-weight: bold; border:none; cursor:pointer; }
+        .list-container { margin-top: 15px; max-height: 300px; overflow-y: auto; border-top: 1px solid #f1f5f9; }
+        .list-item { background: #f8fafc; padding: 10px; border-radius: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #cbd5e1; }
+        @media (max-width: 768px) { .container { grid-template-columns: 1fr; } }
+        .sw-box { display: flex; gap: 10px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🛡️ Admin Panel</h1>
+        <div>
+            <button onclick="changePass()" class="btn" style="background:#e2e8f0; margin-right:10px;">Change Password</button>
+            <button onclick="logout()" class="btn btn-logout">Log Out</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h3>1. Create Faculty Account</h3>
+            <input type="text" id="f-name" placeholder="Full Name (e.g. Ms. Navya)">
+            <select id="f-dept"><option value="Computer Science">Computer Science</option><option value="Electronics">Electronics</option><option value="Mechanical">Mechanical</option><option value="Civil">Civil</option><option value="Applied Science">Applied Science</option></select>
+            <div style="background:#eff6ff; padding:10px; border-radius:6px; margin-bottom:15px;">
+                <label style="color:#2563eb;">Credentials</label>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <input type="text" id="f-reg" placeholder="ID (T-101)">
+                    <input type="text" id="f-pass" placeholder="Password">
+                </div>
+            </div>
+            <button class="btn-primary" onclick="addFaculty()">+ Create Account</button>
+            <div class="list-container" id="fac-list"></div>
+        </div>
+
+        <div class="card">
+            <h3>2. Assign Classes</h3>
+            <select id="schedule-fac-select" onchange="loadSchedule()"><option value="">-- Choose Teacher --</option></select>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                <div><label>Day</label><select id="t-day"><option value="Mon">Mon</option><option value="Tue">Tue</option><option value="Wed">Wed</option><option value="Thu">Thu</option><option value="Fri">Fri</option></select></div>
+                <div><label>Period</label><select id="t-period"><option value="1">1 (09-10)</option><option value="2">2 (10-11)</option><option value="3">3 (11-12)</option><option value="4">4 (12-01)</option><option value="5">5 (02-03)</option><option value="6">6 (03-04)</option></select></div>
+            </div>
+
+            <label>Subject</label>
+            <input type="text" id="t-sub" placeholder="Subject Name">
+
+            <div style="border-top:1px solid #eee; padding-top:10px;">
+                <label>Location Type</label>
+                <div class="sw-box">
+                    <button onclick="setType('theory')" id="btn-th" style="background:#ddd; border:none; padding:5px 10px; border-radius:4px;">Theory</button>
+                    <button onclick="setType('lab')" id="btn-lb" style="background:#fff; border:1px solid #ddd; padding:5px 10px; border-radius:4px;">Lab</button>
+                </div>
+                
+                <div id="sel-area"></div>
+            </div>
+
+            <button class="btn-primary" style="background:#10b981; margin-top:10px;" onclick="addSchedule()">+ Add Slot</button>
+            <div class="list-container" id="current-schedule-list"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, deleteDoc, doc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut, updatePassword } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyCJOcm-V3Gt4yL6adrh0EhWSzR1Z-jKh2M", authDomain: "campuscompass-899ca.firebaseapp.com", projectId: "campuscompass-899ca", storageBucket: "campuscompass-899ca.firebasestorage.app", messagingSenderId: "1054182451273", appId: "1:1054182451273:web:3ec53886693197c441b798", measurementId: "G-3SFMCJQZSW" };
+        const app = initializeApp(firebaseConfig); const db = getFirestore(app); const auth = getAuth(app);
+
+        let currentUser = null;
+        onAuthStateChanged(auth, u => { if(!u) window.location.href="login.html"; currentUser = u; });
+
+        window.logout = () => signOut(auth).then(() => window.location.href="login.html");
+        
+        // --- CHANGE PASSWORD FUNCTION ---
+        window.changePass = () => {
+            const newP = prompt("Enter new password (min 6 chars):");
+            if(newP && newP.length >= 6) {
+                updatePassword(currentUser, newP)
+                    .then(() => { alert("Password Updated! Please login again."); logout(); })
+                    .catch((e) => alert("Error: " + e.message));
+            } else if(newP) { alert("Password must be 6+ chars."); }
+        };
+
+        let locType = 'theory';
+        const deptDivs = { "CSE":["A","B","C","D"], "ADS":["A","B"], "EEE":["A"], "EC":["A"], "ME":["A"], "CE":["A"], "CSD":["A"], "CSBS":["A"], "CC":["A"] };
+
+        window.setType = (t) => { locType = t; document.getElementById('btn-th').style.background = t==='theory'?'#ddd':'#fff'; document.getElementById('btn-lb').style.background = t==='lab'?'#ddd':'#fff'; renderSelectors(); };
+        function renderSelectors() {
+            const area = document.getElementById('sel-area');
+            if(locType === 'theory') {
+                area.innerHTML = `<select id="s-dept" onchange="updDiv()"><option value="CSE">CSE</option><option value="ADS">ADS</option><option value="EEE">EEE</option><option value="EC">EC</option><option value="ME">ME</option><option value="CE">CE</option><option value="CSD">CSD</option><option value="CSBS">CSBS</option><option value="CC">CC</option></select><div style="display:grid; grid-template-columns:1fr 1fr; gap:5px;"><select id="s-year"><option value="1">1st Yr</option><option value="2">2nd Yr</option><option value="3">3rd Yr</option><option value="4">4th Yr</option></select><select id="s-div"></select></div>`; updDiv();
+            } else {
+                area.innerHTML = `<select id="s-lab" onchange="updNum()"><option value="Computer Lab">Computer Lab</option><option value="CAD Lab">CAD Lab</option><option value="Chemistry Lab">Chemistry Lab</option><option value="Physics Lab">Physics Lab</option><option value="Electronics Lab">Electronics Lab</option><option value="Electrical Lab">Electrical Lab</option><option value="Metallurgy Lab">Metallurgy Lab</option></select><select id="s-num" style="display:none"></select>`; updNum();
+            }
+        }
+        window.updDiv = () => { const d=document.getElementById('s-dept').value; const s=document.getElementById('s-div'); s.innerHTML=""; (deptDivs[d]||["A"]).forEach(x=>s.innerHTML+=`<option value="${x}">${x}</option>`); };
+        window.updNum = () => { const l=document.getElementById('s-lab').value; const n=document.getElementById('s-num'); n.innerHTML=""; if(l.includes("Computer")){ n.style.display="block"; for(let i=1;i<=12;i++) n.innerHTML+=`<option value="${i}">${i}</option>`; } else if(l.includes("CAD")){ n.style.display="block"; n.innerHTML=`<option value="1">1</option><option value="2">2</option>`; } else { n.style.display="none"; } };
+
+        window.addSchedule = async () => {
+            const fid = document.getElementById('schedule-fac-select').value; if(!fid) return alert("Select Teacher");
+            let locStr = "", blkId = "b-cs";
+            if(locType === 'theory') {
+                const d=document.getElementById('s-dept').value, y=document.getElementById('s-year').value, v=document.getElementById('s-div').value; locStr = `S${y*2} ${d}-${v}`;
+                if(["CSE","ADS","CSD","CSBS","CC"].includes(d)) blkId="b-cs"; else if(["EC","EEE"].includes(d)) blkId="b-ec"; else if(d==="ME") blkId="b-mech"; else blkId="b-civil";
+            } else {
+                const l=document.getElementById('s-lab').value, n=document.getElementById('s-num').value; locStr = (document.getElementById('s-num').style.display!=='none') ? `${l} ${n}` : l;
+                if(l.includes("Comp")||l.includes("CC")) blkId="b-cs"; else if(l.includes("Elec")||l.includes("Elect")) blkId="b-ec"; else if(l.includes("CAD")||l.includes("Meta")) blkId="b-mech"; else blkId="b-civil";
+            }
+            const day=document.getElementById('t-day').value, per=document.getElementById('t-period').value;
+            await addDoc(collection(db, "timetable"), { fid, key:`${day}-${per}-${fid}`, day, period:per, sub:document.getElementById('t-sub').value, loc:locStr, blk:blkId });
+            alert("Saved!");
+        };
+
+        const facS = document.getElementById('schedule-fac-select'); const fList = document.getElementById('fac-list');
+        onSnapshot(collection(db, "faculty"), s => { facS.innerHTML='<option value="">Select</option>'; fList.innerHTML=''; s.forEach(d => { const f=d.data(); facS.innerHTML+=`<option value="${d.id}">${f.name}</option>`; fList.innerHTML+=`<div class="list-item"><b>${f.name}</b> <button style="color:red;border:none;background:none;cursor:pointer;" onclick="delFac('${d.id}')">Del</button></div>`; })});
+        window.addFaculty = async () => { await addDoc(collection(db, "faculty"), { name:document.getElementById('f-name').value, dept:document.getElementById('f-dept').value, regId:document.getElementById('f-reg').value, password:document.getElementById('f-pass').value, status:"Available"}); alert("Created!"); };
+        window.delFac = async(id) => deleteDoc(doc(db,"faculty",id));
+        window.loadSchedule = async () => { const id=facS.value; const l=document.getElementById('current-schedule-list'); l.innerHTML=""; onSnapshot(query(collection(db,"timetable"),where("fid","==",id)), s=>{ l.innerHTML=""; s.forEach(d=>{ const t=d.data(); l.innerHTML+=`<div class="list-item"><small>${t.day} P${t.period} - ${t.sub}</small><button onclick="delSche('${d.id}')">X</button></div>`})})};
+        window.delSche = async(id) => deleteDoc(doc(db,"timetable",id));
+        renderSelectors();
+    </script>
+</body>
+</html>

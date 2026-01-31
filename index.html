@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Compass | Map</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg: #f8fafc; --sidebar: #ffffff; --primary: #2563eb; --text: #1e293b; --border: #e2e8f0; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); } 70% { box-shadow: 0 0 0 15px rgba(37, 99, 235, 0); } 100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); } }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; height: 100vh; display: flex; background: var(--bg); overflow: hidden; }
+
+        /* Sidebar */
+        aside { width: 400px; background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 20; box-shadow: 4px 0 20px rgba(0,0,0,0.03); }
+        .header { padding: 25px; border-bottom: 1px solid var(--border); }
+        .header h1 { margin: 0; font-size: 1.5rem; color: var(--text); letter-spacing: -0.5px; }
+        .header p { margin: 5px 0 0; color: #64748b; font-size: 0.9rem; }
+
+        .controls { padding: 20px; background: #fff; border-bottom: 1px solid var(--border); }
+        .live-btn { background: #f1f5f9; color: #64748b; border: none; padding: 6px 14px; border-radius: 20px; font-weight: 700; font-size: 0.75rem; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: 0.2s; }
+        .live-btn.active { background: #fee2e2; color: #ef4444; }
+        .live-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+        .day-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; margin: 15px 0; }
+        .day-btn { border: 1px solid var(--border); background: white; padding: 10px 0; font-weight: 600; font-size: 0.85rem; border-radius: 8px; cursor: pointer; color: #64748b; }
+        .day-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+        .search-area { padding: 15px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+        select, input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; outline: none; transition: 0.2s; }
+        select:focus, input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+
+        .faculty-list { flex: 1; overflow-y: auto; padding: 15px; }
+        .list-item { 
+            padding: 15px; margin-bottom: 10px; border: 1px solid var(--border); border-radius: 10px; 
+            background: white; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; 
+        }
+        .list-item:hover { border-color: var(--primary); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .f-info strong { display: block; font-size: 0.95rem; color: var(--text); }
+        .f-info small { display: block; font-size: 0.8rem; color: #64748b; margin-top: 4px; /* FIX: Added margin */ }
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; }
+
+        /* Map */
+        main { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; background: #f8fafc; overflow: hidden; }
+        .map-container { position: relative; width: 900px; height: 700px; background: white; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.05); }
+        
+        .path { position: absolute; background: #e2e8f0; z-index: 1; border-radius: 4px; }
+        .building { 
+            position: absolute; background: white; z-index: 2; border: 3px solid; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            text-align: center; cursor: pointer; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 0 rgba(0,0,0,0.05); border-radius: 8px;
+        }
+        .building strong { font-size: 0.9rem; pointer-events: none; }
+        .building small { font-size: 0.7rem; color: #64748b; margin-top: 4px; pointer-events: none; }
+        
+        /* Colors */
+        #b-cs { border-color: #3b82f6; } #b-ec { border-color: #10b981; } #b-mech { border-color: #f59e0b; } 
+        #b-civil { border-color: #8b5cf6; } #b-canteen { border-color: #ef4444; } #b-lib { border-color: #06b6d4; }
+        
+        .building.active { transform: scale(1.1); z-index: 10; background: white; box-shadow: 0 20px 40px rgba(0,0,0,0.15); }
+        .building.dimmed { opacity: 0.3; filter: grayscale(1); }
+        #b-cs.active, #b-ec.active, #b-mech.active, #b-civil.active, #b-canteen.active, #b-lib.active { animation: pulse 1.5s infinite; }
+
+        /* Popup */
+        .popup { 
+            position: absolute; bottom: 30px; right: 30px; width: 300px; 
+            background: white; padding: 25px; border-radius: 16px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15); border-left: 6px solid var(--primary);
+            opacity: 0; transform: translateY(20px); pointer-events: none; transition: 0.3s; z-index: 100;
+        }
+        .popup.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .popup h3 { margin: 0 0 5px 0; font-size: 1.2rem; color: var(--text); }
+        .popup .badge { display: inline-block; padding: 4px 10px; border-radius: 20px; color: white; font-size: 0.75rem; font-weight: 700; margin-bottom: 15px; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 0.9rem; color: #475569; }
+        .info-row strong { color: var(--text); }
+
+        .btn-schedule { width: 100%; margin-top: 15px; background: var(--primary); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; }
+
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+        .modal-content { background: white; width: 90%; max-width: 450px; border-radius: 16px; padding: 25px; max-height: 80vh; overflow-y: auto; }
+        .sch-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #f1f5f9; }
+        .sch-row:last-child { border: none; }
+    </style>
+</head>
+<body>
+
+    <aside>
+        <div class="header">
+            <h1>Campus Compass 🧭</h1>
+            <p>Live Faculty Tracking System</p>
+        </div>
+        <div class="controls">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                <span style="font-weight:700; font-size:0.8rem; color:#64748b;">CURRENT TIME</span>
+                <button class="live-btn" id="live-btn" onclick="toggleLive()"><div class="live-dot"></div> LIVE</button>
+            </div>
+            <div class="day-grid">
+                <button class="day-btn active" onclick="setDay('Mon')">Mon</button>
+                <button class="day-btn" onclick="setDay('Tue')">Tue</button>
+                <button class="day-btn" onclick="setDay('Wed')">Wed</button>
+                <button class="day-btn" onclick="setDay('Thu')">Thu</button>
+                <button class="day-btn" onclick="setDay('Fri')">Fri</button>
+                <button class="day-btn" onclick="setDay('Sat')">Sat</button>
+            </div>
+            <input type="range" id="slider" min="9" max="17" step="0.5" value="9">
+            <div style="text-align:center; font-weight:800; color:var(--primary); margin-top:10px; font-size:1.1rem;" id="time-disp">09:00 AM</div>
+        </div>
+        <div class="search-area">
+            <select class="dept-filter" id="dept-filter" onchange="renderList()">
+                <option value="All">All Departments</option>
+                <option value="Computer Science">Computer Science</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Mechanical">Mechanical</option>
+                <option value="Civil">Civil</option>
+                <option value="Applied Science">Applied Science</option>
+            </select>
+            <input type="text" class="search-box" id="search" placeholder="Search for faculty...">
+        </div>
+        <div class="faculty-list" id="list">
+            <div style="padding:20px; text-align:center; color:#94a3b8;">Loading data...</div>
+        </div>
+    </aside>
+
+    <main>
+        <div class="map-container">
+            <div class="path" style="top: 340px; left: 100px; width: 700px; height: 25px;"></div>
+            <div class="path" style="top: 100px; left: 437px; width: 25px; height: 500px;"></div>
+            <div class="building" id="b-cs" style="top: 50px; left: 50px; width: 240px; height: 200px;"><strong>CS Dept & Admin</strong><small>CSE / CSD / CC</small></div>
+            <div class="building" id="b-ec" style="top: 50px; right: 50px; width: 220px; height: 200px;"><strong>Electronics</strong><small>ECE / EEE</small></div>
+            <div class="building" id="b-mech" style="bottom: 50px; left: 50px; width: 240px; height: 180px;"><strong>Mech Block</strong><small>Mechanical</small></div>
+            <div class="building" id="b-civil" style="bottom: 50px; right: 50px; width: 220px; height: 180px;"><strong>Civil Block</strong><small>Civil Engg</small></div>
+            <div class="building" id="b-canteen" style="top: 280px; left: 380px; width: 140px; height: 140px;"><strong>Canteen</strong></div>
+            <div class="building" id="b-lib" style="top: 180px; left: 380px; width: 140px; height: 80px;"><strong>Library</strong></div>
+        </div>
+
+        <div class="popup" id="popup">
+            <h3 id="p-name">--</h3>
+            <span class="badge" id="p-status">--</span>
+            <div class="info-row"><span>Subject:</span> <strong id="p-sub">--</strong></div>
+            <div class="info-row"><span>Location:</span> <strong id="p-loc">--</strong></div>
+            <button class="btn-schedule" onclick="viewFullSchedule()">📅 View Weekly Schedule</button>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="sch-modal">
+        <div class="modal-content">
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                <h2 style="margin:0; font-size:1.2rem;">Weekly Schedule</h2>
+                <button onclick="document.getElementById('sch-modal').style.display='none'" style="border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+            </div>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+    
+    <a href="login.html" style="position:fixed; bottom:0; right:0; padding:10px; color:transparent;">.</a>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyCJOcm-V3Gt4yL6adrh0EhWSzR1Z-jKh2M", authDomain: "campuscompass-899ca.firebaseapp.com", projectId: "campuscompass-899ca", storageBucket: "campuscompass-899ca.firebasestorage.app", messagingSenderId: "1054182451273", appId: "1:1054182451273:web:3ec53886693197c441b798", measurementId: "G-3SFMCJQZSW" };
+        const app = initializeApp(firebaseConfig); const db = getFirestore(app);
+
+        let facultyDB = []; let schedule = {}; let selectedFacId = null;
+
+        onSnapshot(collection(db, "faculty"), s => { facultyDB = []; s.forEach(d => facultyDB.push({ id: d.id, ...d.data() })); renderList(); });
+        onSnapshot(collection(db, "timetable"), s => { schedule = {}; s.forEach(d => { const x = d.data(); schedule[x.key] = x; }); });
+
+        let currentDay = "Mon"; let currentTime = 9.0; let liveMode = false; let liveInterval = null;
+        const ui = { slider: document.getElementById('slider'), disp: document.getElementById('time-disp'), list: document.getElementById('list'), buildings: document.querySelectorAll('.building') };
+
+        function init() {
+            renderList();
+            ui.slider.addEventListener('input', (e) => { if(liveMode) toggleLive(); currentTime = parseFloat(e.target.value); updateTime(); renderList(); document.getElementById('popup').classList.remove('visible'); resetMap(); });
+            document.getElementById('search').addEventListener('input', renderList);
+        }
+
+        window.toggleLive = () => { liveMode = !liveMode; document.getElementById('live-btn').classList.toggle('active', liveMode); if(liveMode){ syncTime(); liveInterval=setInterval(syncTime,60000); ui.slider.disabled=true; } else { clearInterval(liveInterval); ui.slider.disabled=false; } };
+        window.setDay = (d) => { currentDay = d; document.querySelectorAll('.day-btn').forEach(b => b.classList.toggle('active', b.innerText === d)); renderList(); document.getElementById('popup').classList.remove('visible'); resetMap(); };
+        function syncTime() { const now = new Date(); let val = now.getHours() + (now.getMinutes() / 60); if(val>17)val=17; if(val<9)val=9; currentTime=val; ui.slider.value=val; const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat']; const d=days[now.getDay()]; if(d!=='Sun') window.setDay(d); updateTime(); renderList(); }
+        function updateTime() { let h = Math.floor(currentTime); let m = Math.floor((currentTime % 1) * 60); const s = h >= 12 ? "PM" : "AM"; const dh = h > 12 ? h - 12 : h; ui.disp.innerText = `${dh}:${m < 10 ? "0"+m : m} ${s}`; }
+
+        function getStatus(id) {
+            const f = facultyDB.find(x => x.id === id);
+            if(f.override === 'meeting') return { st: "In Meeting", loc: "Conference Room", blk: "b-cs", col: "#8b5cf6", sub: "--" };
+            if(f.override === 'substitution') return { st: "Substitution", loc: f.subLoc || "Class", blk: f.subBlk || "b-cs", col: "#f59e0b", sub: "Substitution" };
+            if(f.override === 'free') return { st: "Available", loc: "Staff Cabin", blk: getDeptBlock(f.dept), col: "#10b981", sub: "--" };
+
+            const p = getPeriod(currentTime);
+            if(p === "LUNCH") return { st: "Lunch Break", loc: "Canteen", blk: "b-canteen", col: "#ef4444", sub: "--" };
+            
+            const key = `${currentDay}-${p}-${id}`;
+            const slot = schedule[key];
+            if(slot) return { st: "In Class", loc: slot.loc, blk: slot.blk, col: "#f59e0b", sub: slot.sub };
+            if(f.status === "On Leave") return { st: "On Leave", loc: "Off Campus", blk: null, col: "#ef4444", sub: "--" };
+
+            return { st: "Available", loc: "Staff Cabin", blk: getDeptBlock(f.dept), col: "#10b981", sub: "--" };
+        }
+
+        function getDeptBlock(d) { if(d.includes("Elect")) return "b-ec"; if(d.includes("Mech")) return "b-mech"; if(d.includes("Civil")) return "b-civil"; return "b-cs"; }
+        function getPeriod(t) { if(t>=9 && t<10) return 1; if(t>=10 && t<11) return 2; if(t>=11.16 && t<12.16) return 3; if(t>=12.16 && t<13.16) return 4; if(t>=13.16 && t<14) return "LUNCH"; if(t>=14 && t<15) return 5; if(t>=15.16 && t<16.16) return 6; return 0; }
+
+        function renderList() {
+            const q = document.getElementById('search').value.toLowerCase(); const filter = document.getElementById('dept-filter').value; ui.list.innerHTML = "";
+            facultyDB.filter(f => (f.name.toLowerCase().includes(q) && (filter==="All" || f.dept.includes(filter)))).forEach(f => {
+                const s = getStatus(f.id); const div = document.createElement('div'); div.className = "list-item";
+                div.innerHTML = `<div class="f-info"><strong>${f.name}</strong><small>${f.dept}</small></div><div class="status-dot" style="background:${s.col}"></div>`;
+                div.onclick = () => highlight(f, s); ui.list.appendChild(div);
+            });
+        }
+
+        window.highlight = (f, s) => {
+            selectedFacId = f.id; resetMap(); 
+            if(s.blk) { const b = document.getElementById(s.blk); if(b) { b.classList.add('active'); ui.buildings.forEach(x => { if(x !== b) x.classList.add('dimmed'); }); }}
+            document.getElementById('p-name').innerText = f.name; 
+            const badge = document.getElementById('p-status'); badge.innerText = s.st; badge.style.backgroundColor = s.col;
+            document.getElementById('p-sub').innerText = s.sub || "--"; // FIXED: Now shows subject
+            document.getElementById('p-loc').innerText = s.loc;
+            document.getElementById('popup').classList.add('visible');
+        };
+
+        window.viewFullSchedule = () => {
+            if(!selectedFacId) return;
+            const body = document.getElementById('modal-body'); body.innerHTML = "";
+            const myClasses = [];
+            Object.keys(schedule).forEach(key => { if(key.includes(selectedFacId)) { const parts = key.split('-'); myClasses.push({ day: parts[0], period: parts[1], ...schedule[key] }); }});
+            
+            if(myClasses.length === 0) { body.innerHTML = "<p style='text-align:center; color:#999'>No classes assigned.</p>"; } 
+            else {
+                const dayOrder = { "Mon":1, "Tue":2, "Wed":3, "Thu":4, "Fri":5, "Sat":6 };
+                myClasses.sort((a,b) => (dayOrder[a.day] - dayOrder[b.day]) || (a.period - b.period));
+                let cDay = "";
+                myClasses.forEach(c => {
+                    if(c.day !== cDay) { body.innerHTML += `<div style="background:#f1f5f9; padding:5px 10px; font-weight:700; font-size:0.8rem; color:#64748b; margin-top:10px; border-radius:4px;">${c.day}</div>`; cDay = c.day; }
+                    body.innerHTML += `<div class="sch-row"><div style="font-weight:700; color:#2563eb; width:60px;">P${c.period}</div><div style="flex:1; text-align:right"><strong>${c.sub}</strong><br><small style="color:#64748b">${c.loc}</small></div></div>`;
+                });
+            }
+            document.getElementById('sch-modal').style.display = 'flex';
+        };
+
+        function resetMap() { ui.buildings.forEach(b => b.classList.remove('active', 'dimmed')); }
+        init();
+    </script>
+</body>
+</html>
