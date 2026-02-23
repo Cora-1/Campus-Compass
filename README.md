@@ -1,55 +1,58 @@
-# Campus Compass 🧭 | Logic-Based Faculty Locator
+# Campus Compass 🧭
+### Logic-Based Faculty Locator for Smart Campuses
 
-**Campus Compass** is a real-time, logic-based navigation system designed to solve the problem of locating faculty on large university campuses. Unlike expensive GPS hardware, this system uses a "Predictive Logic Algorithm" that cross-references **Static Academic Timetables** with **Real-Time Teacher Statuses** (Substitutions, Meetings, Cabin Availability) to pinpoint faculty locations on an interactive digital map.
+![Version](https://img.shields.io/badge/version-1.0.0-blue) ![License](https://img.shields.io/badge/license-MIT-green) ![Status](https://img.shields.io/badge/status-Prototype-orange)
 
-🔗 **Live Demo:** [CampusCompass](https://campuscompass-899ca.web.app/login.html)
+## 🌐 View Live Project
+**[Click Here to View Live Map](https://campuscompass-899ca.web.app/)**
 
----
+## 📖 Overview
+**Campus Compass** is a privacy-first indoor navigation tool designed for large educational institutions. It solves the "Lost Student" problem by predicting faculty locations using a **Time-Space Logic Algorithm**, synthesizing academic timetables with real-time status updates. 
 
-## 🚀 Key Features
+**Unique Value Proposition:** Navigation without Surveillance. No GPS tracking. No expensive hardware beacons.
 
-### 1. 🗺️ Student View (Public Map)
-* **No Login Required:** Accessible instantly by students and visitors.
-* **Logic-Based Tracking:** Shows faculty location based on the current time and day (e.g., "In Class S4 CSE-A" or "Available in Cabin").
-* **Smart Highlighting:** The specific building block (CS, Mech, Electronics, etc.) glows on the map.
-* **Search & Filter:** Instantly find teachers by name or department.
-* **Weekly Schedule:** View a teacher's full timetable for the week.
+## ✨ Key Features
+* **Predictive Location:** Calculates faculty location based on Day, Time, and Master Schedule.
+* **Interactive Maps:** SVG-based schematic maps of the campus layout.
+* **Privacy Centric:** Does not require live GPS tracking of staff.
+* **Admin Dashboard:** Allows HODs to perform manual overrides (e.g., "On Leave", "Class Swapped").
+* **Search Function:** Quickly find faculty by Name or Department.
 
-### 2. 🎓 Teacher Dashboard (Secure Portal)
-* **Session-Based Login:** Secure access using unique Reg ID & Password.
-* **Live Overrides:** Teachers can override the timetable logic with one click:
-    * 📅 **Normal Schedule:** Reverts to the automatic timetable.
-    * 🤝 **Substitution:** Selects a specific class (Theory/Lab) to take over.
-    * 💼 **In Meeting:** Updates status to "Conference Room" (Admin Block).
-    * ☕ **Free / Cabin:** Marks them as available in their staff cabin.
-* **Smart Selector:** Auto-detects the correct block based on the selected class (e.g., selecting "Chemistry Lab" maps to the Science Block).
+## 🛠 Tech Stack
+* **Frontend:** HTML5, CSS3 (Grid/Flexbox), Vanilla JavaScript
+* **Backend:** Google Firebase (Firestore Database)
+* **Design:** Adobe Illustrator (for SVG Map digitization)
+* **Hosting:** Firebase Hosting
 
-### 3. 🛡️ Admin Panel (Management)
-* **Firebase Auth:** Secure email/password login for management.
-* **Faculty Management:** Create/Delete teacher accounts and set credentials.
-* **Timetable Entry:** Easy-to-use interface to input class schedules using the Smart Selector (Theory vs. Lab).
-* **System Reset:** Change passwords and manage database integrity.
+## 🚀 Installation & Setup
 
----
+1.  **Clone the Repository**
+    ```bash
+    git clone [https://github.com/yourusername/campus-compass.git](https://github.com/yourusername/campus-compass.git)
+    ```
 
-## 🛠️ Tech Stack
+2.  **Configure Firebase**
+    * Create a project in [Firebase Console](https://console.firebase.google.com/).
+    * Copy your `firebaseConfig` object.
+    * Paste it into `js/firebase-config.js`.
 
-* **Frontend:** HTML5, CSS3 (Mobile-Responsive), Vanilla JavaScript (ES6 Modules).
-* **Backend:** Firebase (Google Cloud).
-* **Database:** Cloud Firestore (NoSQL Real-time Database).
-* **Authentication:** Firebase Auth & Session Storage.
-* **Deployment:** Firebase Hosting.
+3.  **Run Locally**
+    * Open `index.html` in your browser (or use Live Server in VS Code).
 
----
+## 🧩 The Core Logic (Snippet)
+```javascript
+// The algorithm checks the schedule against the current system time
+function getFacultyLocation(facultyId, currentTime) {
+    const schedule = database.getSchedule(facultyId);
+    const liveStatus = database.getLiveStatus(facultyId);
 
-## 📂 Project Structure
+    // Priority 1: Check for Manual Override (e.g., Sick Leave)
+    if (liveStatus.isActive) return liveStatus.location;
 
-```text
-/
-├── index.html       # Public Map (Landing Page)
-├── login.html       # Unified Gateway (Admin & Faculty Login)
-├── teacher.html     # Teacher Dashboard (Status Overrides)
-├── admin.html       # Admin Panel (Data Entry)
-├── 404.html         # Firebase Error Page
-├── firebase.json    # Hosting Configuration
-└── README.md        # Documentation
+    // Priority 2: Check Standard Timetable
+    const currentClass = schedule.find(slot =>
+        slot.startTime <= currentTime && slot.endTime > currentTime
+    );
+
+    return currentClass ? currentClass.roomNumber : "Staff Cabin (Probable)";
+}
